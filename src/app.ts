@@ -1,4 +1,4 @@
-import express, { ErrorRequestHandler } from "express";
+import express from "express";
 import createHttpError from "http-errors";
 import userRoute from "./routes/userRoutes";
 import mongoose from "mongoose";
@@ -8,10 +8,27 @@ import passport from "passport";
 import kPassport from "./middleware/passport";
 import cookieParser from "cookie-parser";
 import cors from "cors";
+
 const app = express();
+
+const allowedOrigins = [
+  "http://localhost:5173",
+  "https://blockvaultcrypto.vercel.app"
+];
+
 app.use(
-  cors({ origin: [process.env.FRONTEND_URL as string], credentials: true })
+  cors({
+    origin: (origin, callback) => {
+      if (!origin) return callback(null, true);
+      if (allowedOrigins.includes(origin)) return callback(null, true);
+      return callback(new Error("Not allowed by CORS"));
+    },
+    credentials: true
+  })
 );
+
+app.options("*", cors());
+
 app.use(express.json());
 app.use(cookieParser());
 
@@ -31,7 +48,7 @@ mongoose
   .then(() => {
     console.log("Connected to db");
     app.listen(PORT, () => {
-      console.log(`Listening On PORT ${PORT}`);
+      console.log(`Listening on PORT ${PORT}`);
     });
   })
   .catch(() => {
